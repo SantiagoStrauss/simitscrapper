@@ -14,21 +14,22 @@ rm google-chrome-stable_current_amd64.deb
 
 # Install ChromeDriver
 echo "Installing ChromeDriver..."
-CHROME_VERSION=$(${HOME}/chrome/opt/google/chrome/chrome --version | cut -d ' ' -f 3 | cut -d '.' -f 1)
+CHROME_BINARY="${HOME}/chrome/opt/google/chrome/google-chrome"
+CHROME_VERSION=$(${CHROME_BINARY} --version | cut -d ' ' -f 3 | cut -d '.' -f 1)
 CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}")
 wget -q "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
 unzip -q chromedriver_linux64.zip -d ${HOME}/chromedriver
 rm chromedriver_linux64.zip
 
 # Make executables available in PATH
-export PATH="${HOME}/chrome/usr/bin:${HOME}/chromedriver:${PATH}"
-echo "export PATH=${HOME}/chrome/usr/bin:${HOME}/chromedriver:${PATH}" >> ~/.bashrc
+export PATH="${HOME}/chrome/opt/google/chrome:${HOME}/chromedriver:${PATH}"
+echo "export PATH=${HOME}/chrome/opt/google/chrome:${HOME}/chromedriver:${PATH}" >> ~/.bashrc
 
 # Verify installations
 echo "Chrome version:"
-google-chrome --version || echo "Chrome verification failed"
+${CHROME_BINARY} --version || echo "Chrome verification failed"
 echo "ChromeDriver version:"
 chromedriver --version || echo "ChromeDriver verification failed"
 
 # Update Python script with new Chrome binary location
-sed -i "s|options.binary_location = \"/usr/bin/google-chrome\"|options.binary_location = \"${HOME}/chrome/opt/google/chrome/google-chrome\"|" cemail.py
+sed -i "s|options.binary_location = \".*\"|options.binary_location = \"${CHROME_BINARY}\"|" cemail.py
