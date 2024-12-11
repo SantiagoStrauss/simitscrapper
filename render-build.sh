@@ -31,4 +31,4 @@ echo "ChromeDriver version:"
 chromedriver --version || echo "ChromeDriver verification failed"
 
 # Update Python script with new Chrome binary location
-sed -i "s|options.binary_location = \"/usr/bin/google-chrome\"|options.binary_location = \"${HOME}/chrome/usr/bin/google-chrome\"|" cemail.py
+sed -i "s|options.binary_location = \"/usr/bin/google-chrome\"|options.binary_location = \"${HOME}/chrome/opt/google/chrome/google-chrome\"|" cemail.py
