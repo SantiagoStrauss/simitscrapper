@@ -1,3 +1,4 @@
+import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -17,8 +18,7 @@ from dataclasses import dataclass
 from contextlib import contextmanager
 import time
 import traceback
-###111111
-###sin pantallazo
+
 @dataclass
 class CompromisedData:
     company_name: str
@@ -97,10 +97,6 @@ class CompromisedEmailScraper:
                 driver.get(url)
                 self.logger.info(f"Navigando a {url}")
                 
-                # Tomar captura de pantalla
-                #driver.save_screenshot("screenshot_headless.png")
-                #self.logger.info("Captura de pantalla tomada.")
-
                 wait = WebDriverWait(driver, 30)  # Aumenta el tiempo de espera
 
                 # Intentar localizar el campo de correo electrónico
