@@ -65,7 +65,7 @@ class CompromisedEmailScraper:
         options.add_argument('--disable-webgl')
         options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
         options.add_experimental_option('useAutomationExtension', False)
-        options.binary_location = "/opt/render/project/chrome/opt/google/chrome/google-chrome"
+        options.binary_location = f"{os.environ.get('HOME')}/chrome/opt/google/chrome/google-chrome"
         options.add_argument(
             'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
             'AppleWebKit/537.36 (KHTML, like Gecko) '

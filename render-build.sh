@@ -12,13 +12,21 @@ wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.de
 dpkg -x google-chrome-stable_current_amd64.deb ${HOME}/chrome
 rm google-chrome-stable_current_amd64.deb
 
+# Set executable permissions
+chmod +x ${HOME}/chrome/opt/google/chrome/google-chrome
+chmod +x ${HOME}/chrome/opt/google/chrome/chrome-sandbox
+
 # Install ChromeDriver
 echo "Installing ChromeDriver..."
 CHROME_BINARY="${HOME}/chrome/opt/google/chrome/google-chrome"
-CHROME_VERSION=$(${CHROME_BINARY} --version | cut -d ' ' -f 3 | cut -d '.' -f 1)
+
+# Get Chrome version with error handling
+CHROME_VERSION=$(${CHROME_BINARY} --version 2>/dev/null | cut -d ' ' -f 3 | cut -d '.' -f 1 || echo "120")
 CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}")
+
 wget -q "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
 unzip -q chromedriver_linux64.zip -d ${HOME}/chromedriver
+chmod +x ${HOME}/chromedriver/chromedriver
 rm chromedriver_linux64.zip
 
 # Make executables available in PATH
