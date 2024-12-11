@@ -62,13 +62,15 @@ class CompromisedEmailScraper:
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-extensions')
         options.add_argument('--disable-blink-features=AutomationControlled')
-        options.add_argument('--disable-webgl') # Deshabilita WebGL
+        options.add_argument('--disable-webgl')  # Deshabilita WebGL
         options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
         options.add_experimental_option('useAutomationExtension', False)
-        # Opcional: Establecer un User-Agent real
-        options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-                             'AppleWebKit/537.36 (KHTML, like Gecko) '
-                             'Chrome/98.0.4758.102 Safari/537.36')
+        options.binary_location = "/usr/bin/google-chrome"  # Ruta típica de Chrome en servidores Linux
+        options.add_argument(
+            'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+            'AppleWebKit/537.36 (KHTML, like Gecko) '
+            'Chrome/98.0.4758.102 Safari/537.36'
+        )
         return options
 
     @contextmanager
@@ -86,6 +88,7 @@ class CompromisedEmailScraper:
             if driver:
                 driver.quit()
                 self.logger.info("Browser closed")
+
 
     def scrape(self, url: str, email: str) -> List[CompromisedData]:
         results = []
