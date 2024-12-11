@@ -18,6 +18,7 @@ from contextlib import contextmanager
 import time
 import traceback
 ###111111
+###sin pantallazo
 @dataclass
 class CompromisedData:
     company_name: str
@@ -94,8 +95,8 @@ class CompromisedEmailScraper:
                 self.logger.info(f"Navigando a {url}")
                 
                 # Tomar captura de pantalla
-                driver.save_screenshot("screenshot_headless.png")
-                self.logger.info("Captura de pantalla tomada.")
+                #driver.save_screenshot("screenshot_headless.png")
+                #self.logger.info("Captura de pantalla tomada.")
 
                 wait = WebDriverWait(driver, 30)  # Aumenta el tiempo de espera
 
