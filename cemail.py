@@ -51,27 +51,27 @@ class CompromisedEmailScraper:
             logger.addHandler(handler)
         return logger
 
-@staticmethod
-def _setup_chrome_options(headless: bool) -> webdriver.ChromeOptions:
-    options = webdriver.ChromeOptions()
-    if headless:
-        options.add_argument('--headless=new')  # Usa el modo headless más reciente
-    options.add_argument('--window-size=1920,1080')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-extensions')
-    options.add_argument('--disable-blink-features=AutomationControlled')
-    options.add_argument('--disable-webgl')  # Deshabilita WebGL
-    options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
-    options.add_experimental_option('useAutomationExtension', False)
-    options.binary_location = "/usr/bin/google-chrome"  # Ruta típica de Chrome en servidores Linux
-    options.add_argument(
-        'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-        'AppleWebKit/537.36 (KHTML, like Gecko) '
-        'Chrome/98.0.4758.102 Safari/537.36'
-    )
-    return options
+    @staticmethod
+    def _setup_chrome_options(headless: bool) -> webdriver.ChromeOptions:
+        options = webdriver.ChromeOptions()
+        if headless:
+            options.add_argument('--headless=new')  # Usa el modo headless más reciente
+        options.add_argument('--window-size=1920,1080')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-extensions')
+        options.add_argument('--disable-blink-features=AutomationControlled')
+        options.add_argument('--disable-webgl')  # Deshabilita WebGL
+        options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
+        options.add_experimental_option('useAutomationExtension', False)
+        options.binary_location = "/usr/bin/google-chrome"  # Ruta típica de Chrome en servidores Linux
+        options.add_argument(
+            'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+            'AppleWebKit/537.36 (KHTML, like Gecko) '
+            'Chrome/98.0.4758.102 Safari/537.36'
+        )
+        return options
 
     @contextmanager
     def _get_driver(self):
