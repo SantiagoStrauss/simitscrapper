@@ -2,10 +2,6 @@
 # Exit on error
 set -e
 
-# Update package lists and install dependencies
-apt-get update
-apt-get install -y wget unzip
-
 # Create necessary directories in writable location
 mkdir -p "${HOME}/chrome"
 mkdir -p "${HOME}/chromedriver"
