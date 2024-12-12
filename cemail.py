@@ -1,4 +1,3 @@
-import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -18,7 +17,8 @@ from dataclasses import dataclass
 from contextlib import contextmanager
 import time
 import traceback
-
+###111111
+###sin pantallazo
 @dataclass
 class CompromisedData:
     company_name: str
@@ -51,27 +51,27 @@ class CompromisedEmailScraper:
             logger.addHandler(handler)
         return logger
 
-    @staticmethod
-    def _setup_chrome_options(headless: bool) -> webdriver.ChromeOptions:
-        options = webdriver.ChromeOptions()
-        if headless:
-            options.add_argument('--headless=new')
-        options.add_argument('--window-size=1920,1080')
-        options.add_argument('--disable-gpu')
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
-        options.add_argument('--disable-extensions')
-        options.add_argument('--disable-blink-features=AutomationControlled')
-        options.add_argument('--disable-webgl')
-        options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
-        options.add_experimental_option('useAutomationExtension', False)
-        options.binary_location = f"{os.environ.get('HOME')}/chrome/opt/google/chrome/google-chrome"
-        options.add_argument(
-            'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-            'AppleWebKit/537.36 (KHTML, like Gecko) '
-            'Chrome/98.0.4758.102 Safari/537.36'
-        )
-        return options
+@staticmethod
+def _setup_chrome_options(headless: bool) -> webdriver.ChromeOptions:
+    options = webdriver.ChromeOptions()
+    if headless:
+        options.add_argument('--headless=new')  # Usa el modo headless más reciente
+    options.add_argument('--window-size=1920,1080')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-extensions')
+    options.add_argument('--disable-blink-features=AutomationControlled')
+    options.add_argument('--disable-webgl')  # Deshabilita WebGL
+    options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
+    options.add_experimental_option('useAutomationExtension', False)
+    options.binary_location = "/usr/bin/google-chrome"  # Ruta típica de Chrome en servidores Linux
+    options.add_argument(
+        'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+        'AppleWebKit/537.36 (KHTML, like Gecko) '
+        'Chrome/98.0.4758.102 Safari/537.36'
+    )
+    return options
 
     @contextmanager
     def _get_driver(self):
@@ -89,7 +89,6 @@ class CompromisedEmailScraper:
                 driver.quit()
                 self.logger.info("Browser closed")
 
-
     def scrape(self, url: str, email: str) -> List[CompromisedData]:
         results = []
         try:
@@ -97,6 +96,10 @@ class CompromisedEmailScraper:
                 driver.get(url)
                 self.logger.info(f"Navigando a {url}")
                 
+                # Tomar captura de pantalla
+                #driver.save_screenshot("screenshot_headless.png")
+                #self.logger.info("Captura de pantalla tomada.")
+
                 wait = WebDriverWait(driver, 30)  # Aumenta el tiempo de espera
 
                 # Intentar localizar el campo de correo electrónico
