@@ -12,6 +12,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import logging
+import os  # Added import os
 from typing import List, Optional
 from dataclasses import dataclass
 from contextlib import contextmanager
