@@ -1,6 +1,5 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import (
     WebDriverException,
     NoSuchElementException,
@@ -12,13 +11,11 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import logging
-import os  # Added import os
 from typing import List, Optional
 from dataclasses import dataclass
 from contextlib import contextmanager
-import time
 import traceback
-
+###111111
 @dataclass
 class CompromisedData:
     company_name: str
@@ -55,26 +52,20 @@ class CompromisedEmailScraper:
     def _setup_chrome_options(headless: bool) -> webdriver.ChromeOptions:
         options = webdriver.ChromeOptions()
         if headless:
-            options.add_argument('--headless=new')
+            options.add_argument('--headless=new')  # Usa el modo headless más reciente
         options.add_argument('--window-size=1920,1080')
         options.add_argument('--disable-gpu')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-extensions')
         options.add_argument('--disable-blink-features=AutomationControlled')
-        options.add_argument('--disable-webgl')
+        options.add_argument('--disable-webgl') # Deshabilita WebGL
         options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
         options.add_experimental_option('useAutomationExtension', False)
-        
-        # Use Render's Chrome installation path
-        chrome_binary = '/opt/render/project/chrome-linux/chrome'
-        options.binary_location = chrome_binary
-        
-        options.add_argument(
-            'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-            'AppleWebKit/537.36 (KHTML, like Gecko) '
-            'Chrome/131.0.0.0 Safari/537.36'
-        )
+        # Opcional: Establecer un User-Agent real
+        options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                             'AppleWebKit/537.36 (KHTML, like Gecko) '
+                             'Chrome/98.0.4758.102 Safari/537.36')
         return options
 
     @contextmanager

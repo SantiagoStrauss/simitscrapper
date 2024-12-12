@@ -1,6 +1,5 @@
 selenium
 webdriver-manager
 dataclasses
-undetected-chromedriver
 flask
 gunicorn
