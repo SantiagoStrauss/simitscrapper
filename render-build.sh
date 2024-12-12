@@ -2,6 +2,10 @@
 # Exit on error
 set -e
 
+# Update package lists and install dependencies
+apt-get update
+apt-get install -y wget unzip
+
 # Create necessary directories in writable location
 mkdir -p "${HOME}/chrome"
 mkdir -p "${HOME}/chromedriver"
@@ -31,7 +35,6 @@ rm chromedriver_linux64.zip
 
 # Make executables available in PATH
 export PATH="${HOME}/chrome/opt/google/chrome:${HOME}/chromedriver:${PATH}"
-echo "export PATH=${HOME}/chrome/opt/google/chrome:${HOME}/chromedriver:${PATH}" >> ~/.bashrc
 
 # Verify installations
 echo "Chrome version:"
