@@ -20,11 +20,15 @@ mv chromedriver $HOME/bin/chromedriver || echo "Could not move chromedriver to $
 # Add ChromeDriver to PATH
 export PATH=$HOME/bin:$PATH
 
+# Create symlink for Chrome binary
+CHROME_PATH="/opt/render/project/chrome-linux/opt/google/chrome/chrome"
+ln -s $CHROME_PATH /opt/render/project/chrome-linux/chrome || echo "Could not create symlink"
+
 # Cleanup
 rm google-chrome-stable_current_amd64.deb chromedriver_linux64.zip
 
-# Verify installation
+# Verify installation 
 echo "Chrome version:"
-/opt/render/project/chrome-linux/opt/google/chrome/chrome --version || echo "Chrome not found"
+$CHROME_PATH --version || echo "Chrome not found"
 echo "ChromeDriver version:"
 chromedriver --version || echo "ChromeDriver not found"

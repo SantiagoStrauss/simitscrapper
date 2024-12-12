@@ -66,9 +66,11 @@ class CompromisedEmailScraper:
         options.add_argument('--disable-webgl')
         options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
         options.add_experimental_option('useAutomationExtension', False)
+        
         # Use Render's Chrome installation path
-        chrome_binary = '/opt/render/project/chrome-linux/chrome'
+        chrome_binary = '/opt/render/project/chrome-linux/opt/google/chrome/chrome'
         options.binary_location = chrome_binary
+        
         options.add_argument(
             'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
             'AppleWebKit/537.36 (KHTML, like Gecko) '
