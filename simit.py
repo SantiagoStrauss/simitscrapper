@@ -19,6 +19,7 @@ from contextlib import contextmanager
 import traceback
 import time
 
+#funciona para personas con y sin multas
 @dataclass
 class RegistraduriaData:
     nuip: str
@@ -30,9 +31,9 @@ class simitScraper:
     URL = 'https://www.fcm.org.co/simit/#/home-public'
     INPUT_XPATH = '//*[@id="txtBusqueda"]'
     BUTTON_XPATH = '//*[@id="consultar"]'
-    BANNER_CLOSE_XPATH = '//*[@id="modalInformation"]/div/div/div[1]/button/span'
+    BANNER_CLOSE_XPATH = '//*[@id="modalInformation"]/div/div/div[1]/button/span'  # Updated XPath
 
-    def __init__(self, headless: bool = False):
+    def __init__(self, headless: bool = True):
         self.logger = self._setup_logger()
         self.options = self._setup_chrome_options(headless)
         self.service = ChromeService(
@@ -54,7 +55,8 @@ class simitScraper:
     @staticmethod
     def _setup_chrome_options(headless: bool) -> webdriver.ChromeOptions:
         options = webdriver.ChromeOptions()
-        options.binary_location = "/opt/render/project/.chrome/chrome-linux64/chrome-linux64/chrome"
+        # Commented out binary_location for cross-platform compatibility
+        # options.binary_location = "/opt/render/project/.chrome/chrome-linux64/chrome-linux64/chrome"
         if headless:
             options.add_argument('--headless=new')
         options.add_argument('--window-size=1920,1080')
@@ -79,7 +81,7 @@ class simitScraper:
         driver = None
         try:
             driver = webdriver.Chrome(service=self.service, options=self.options)
-            driver.maximize_window()
+            driver.set_page_load_timeout(60)
             self.logger.info("Chrome browser started successfully")
             yield driver
         except WebDriverException as e:
@@ -121,6 +123,7 @@ class simitScraper:
 
                 wait = WebDriverWait(driver, 20)
 
+                # Close banner if present
                 try:
                     banner_close = wait.until(EC.element_to_be_clickable((By.XPATH, self.BANNER_CLOSE_XPATH)))
                     actions = ActionChains(driver)
@@ -136,17 +139,26 @@ class simitScraper:
                     self.logger.error(traceback.format_exc())
 
                 try:
-                    input_field = wait.until(EC.visibility_of_element_located((By.XPATH, self.INPUT_XPATH)))
+                    input_field = wait.until(
+                        EC.visibility_of_element_located((By.XPATH, self.INPUT_XPATH))
+                    )
+                    wait.until(EC.element_to_be_clickable((By.XPATH, self.INPUT_XPATH)))
                     input_field.clear()
                     input_field.send_keys(nuip)
                     self.logger.info(f"NUIP ingresado: {nuip}")
 
-                    search_button = wait.until(EC.element_to_be_clickable((By.XPATH, self.BUTTON_XPATH)))
+                    search_button = wait.until(
+                        EC.element_to_be_clickable((By.XPATH, self.BUTTON_XPATH))
+                    )
                     if not self._retry_click(search_button, driver, "Search button"):
                         self.logger.error("No se pudo clicar el botón de búsqueda después de varios intentos.")
                         return None
                 except TimeoutException:
                     self.logger.error("Campo NUIP no encontrado dentro del tiempo de espera.")
+                    return None
+                except ElementNotInteractableException as e:
+                    self.logger.error(f"Elemento no interactuable: {e}")
+                    self.logger.error(traceback.format_exc())
                     return None
                 except Exception as e:
                     self.logger.error(f"Error al ingresar NUIP o clicar el botón: {e}")
@@ -155,23 +167,52 @@ class simitScraper:
 
                 try:
                     resultados_xpath = '//*[@id="mainView"]/div/div[1]/div/div[2]/div[2]/p[1]'
-                    resultado_element = wait.until(EC.visibility_of_element_located((By.XPATH, resultados_xpath)))
+                    resultado_element = wait.until(
+                        EC.visibility_of_element_located((By.XPATH, resultados_xpath))
+                    )
+                    self.logger.info("Resultados encontrados.")
+
                     estado_text = resultado_element.text if resultado_element else None
                     if not estado_text or not estado_text.strip():
+                        self.logger.warning("Sin texto en p[1], intentando con resumenEstadoCuenta.")
                         alt_xpath = '//*[@id="resumenEstadoCuenta"]/div/div'
-                        alt_element = wait.until(EC.visibility_of_element_located((By.XPATH, alt_xpath)))
+                        alt_element = wait.until(
+                            EC.visibility_of_element_located((By.XPATH, alt_xpath))
+                        )
                         estado_text = alt_element.text if alt_element else None
 
                     self.logger.info(f"Información extraída: {estado_text}")
-                    data = RegistraduriaData(nuip=nuip, estado=estado_text)
+
+                    data = RegistraduriaData(
+                        nuip=nuip,
+                        estado=estado_text
+                    )
+                    self.logger.info(f"Datos extraídos: {data}")
                     return data
+
                 except TimeoutException:
-                    self.logger.error("No se encontraron resultados dentro del tiempo de espera.")
-                    return None
-                except Exception as e:
-                    self.logger.error(f"Error al extraer resultados: {e}")
-                    self.logger.error(traceback.format_exc())
-                    return None
+                    self.logger.warning("Resultados en p[1] no encontrados, intentando con resumenEstadoCuenta.")
+                    try:
+                        alt_xpath = '//*[@id="resumenEstadoCuenta"]/div/div'
+                        alt_element = wait.until(
+                            EC.visibility_of_element_located((By.XPATH, alt_xpath))
+                        )
+                        estado_text = alt_element.text if alt_element else None
+                        self.logger.info(f"Información extraída: {estado_text}")
+
+                        data = RegistraduriaData(
+                            nuip=nuip,
+                            estado=estado_text
+                        )
+                        self.logger.info(f"Datos extraídos: {data}")
+                        return data
+                    except TimeoutException:
+                        self.logger.error("No se encontró información en resumenEstadoCuenta.")
+                        return None
+                    except Exception as e:
+                        self.logger.error(f"Error al extraer información desde resumenEstadoCuenta: {e}")
+                        self.logger.error(traceback.format_exc())
+                        return None
         except Exception as e:
             self.logger.error(f"Error general en el proceso de scraping: {e}")
             self.logger.error(traceback.format_exc())
