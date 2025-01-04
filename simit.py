@@ -64,8 +64,8 @@ class simitScraper:
         options.add_argument('--window-size=800,600')
         
         # Memory management
-        options.add_argument('--js-flags=--max-old-space-size=128')  # Limit JS memory
-        options.add_argument('--single-process')  # Use single process
+        options.add_argument('--js-flags=--max-old-space-size=128')
+        options.add_argument('--single-process')
         options.add_argument('--disable-site-isolation-trials')
         
         # Renderer specific settings
@@ -79,17 +79,9 @@ class simitScraper:
         driver = None
         try:
             driver = webdriver.Chrome(service=self.service, options=self.options)
-            # Increase renderer timeout
-            driver.set_page_load_timeout(45)  # Increased timeout for initial load
-            driver.command_executor._commands["send_command"] = (
-                "POST", '/session/$sessionId/chromium/send_command'
-            )
-            # Set renderer timeout
-            params = {
-                "cmd": "Page.setDefaultNavigationTimeout",
-                "params": {"timeout": 45000}  # 45 seconds
-            }
-            driver.execute("send_command", params)
+            # Set page load timeout directly using the standard method
+            driver.set_page_load_timeout(45)
+            driver.implicitly_wait(10)  # Add implicit wait
             
             self.logger.info("Chrome browser started successfully")
             yield driver
@@ -97,8 +89,8 @@ class simitScraper:
             if driver:
                 try:
                     driver.quit()
-                except:
-                    pass
+                except Exception as e:
+                    self.logger.error(f"Error closing driver: {str(e)}")
 
     def _safe_execute_script(self, driver, script, *args):
         try:
@@ -125,14 +117,16 @@ class simitScraper:
                         wait = WebDriverWait(driver, 15)
                         
                         # Wait for page to be fully loaded
-                        self._safe_execute_script(driver, "return document.readyState") == "complete"
-                        time.sleep(2)  # Small delay to ensure JS initialization
+                        wait.until(
+                            lambda d: d.execute_script("return document.readyState") == "complete"
+                        )
+                        time.sleep(2)
                         
                         # Handle banner if present
                         try:
-                            banner = wait.until(EC.presence_of_element_located(
+                            banner = wait.until(EC.element_to_be_clickable(
                                 (By.XPATH, self.BANNER_CLOSE_XPATH)))
-                            self._safe_execute_script(driver, "arguments[0].click();", banner)
+                            banner.click()
                         except:
                             pass
 
@@ -141,12 +135,8 @@ class simitScraper:
                             try:
                                 input_field = wait.until(EC.presence_of_element_located(
                                     (By.XPATH, self.INPUT_XPATH)))
-                                self._safe_execute_script(
-                                    driver,
-                                    "arguments[0].value = arguments[1]",
-                                    input_field,
-                                    nuip
-                                )
+                                input_field.clear()
+                                input_field.send_keys(nuip)
                                 break
                             except TimeoutException:
                                 time.sleep(1)
@@ -154,19 +144,15 @@ class simitScraper:
                         # Click search with retry
                         for _ in range(2):
                             try:
-                                search_button = wait.until(EC.presence_of_element_located(
+                                search_button = wait.until(EC.element_to_be_clickable(
                                     (By.XPATH, self.BUTTON_XPATH)))
-                                self._safe_execute_script(
-                                    driver,
-                                    "arguments[0].click();",
-                                    search_button
-                                )
+                                search_button.click()
                                 break
                             except TimeoutException:
                                 time.sleep(1)
                         
                         # Result extraction
-                        time.sleep(2)  # Wait for results to load
+                        time.sleep(2)
                         result_xpaths = [
                             '//*[@id="mainView"]/div/div[1]/div/div[2]/div[2]/p[1]',
                             '//*[@id="resumenEstadoCuenta"]/div/div'
@@ -175,12 +161,8 @@ class simitScraper:
                         estado_text = None
                         for xpath in result_xpaths:
                             try:
-                                element = wait.until(EC.presence_of_element_located((By.XPATH, xpath)))
-                                estado_text = self._safe_execute_script(
-                                    driver,
-                                    "return arguments[0].textContent;",
-                                    element
-                                )
+                                element = wait.until(EC.visibility_of_element_located((By.XPATH, xpath)))
+                                estado_text = element.text
                                 if estado_text:
                                     break
                             except:
@@ -192,7 +174,7 @@ class simitScraper:
                     except Exception as e:
                         self.logger.error(f"Error in scraping process (attempt {attempt + 1}): {str(e)}")
                         if attempt < max_retries - 1:
-                            time.sleep(2)  # Wait before retry
+                            time.sleep(2)
                             continue
                         return None
                         
