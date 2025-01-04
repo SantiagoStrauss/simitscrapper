@@ -54,7 +54,7 @@ class simitScraper:
     def _setup_chrome_options(headless: bool) -> webdriver.ChromeOptions:
         options = webdriver.ChromeOptions()
         # Point to the Chrome installed in render-build.sh
-        options.binary_location = "/opt/render/project/.chrome/chrome-linux64/chrome"
+        options.binary_location = "/opt/render/project/.chrome/chrome-linux64/chrome-linux64/chrome"
         if headless:
             options.add_argument('--headless=new')
         options.add_argument('--window-size=1920,1080')
