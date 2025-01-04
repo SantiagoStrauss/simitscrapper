@@ -7,6 +7,7 @@ from selenium.common.exceptions import (
     TimeoutException,
     ElementNotInteractableException,
 )
+from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
@@ -36,7 +37,9 @@ class simitScraper:
     def __init__(self, headless: bool = False):
         self.logger = self._setup_logger()
         self.options = self._setup_chrome_options(headless)
-        self.service = Service(ChromeDriverManager().install())
+        self.service = ChromeService(
+            ChromeDriverManager(driver_version="131.0.6778.108").install()
+        )
 
     @staticmethod
     def _setup_logger() -> logging.Logger:
