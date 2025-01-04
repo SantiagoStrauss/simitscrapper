@@ -8,6 +8,7 @@ from selenium.common.exceptions import (
     ElementNotInteractableException,
 )
 from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -33,7 +34,7 @@ class simitScraper:
     BUTTON_XPATH = '//*[@id="consultar"]'
     BANNER_CLOSE_XPATH = '//*[@id="modalInformation"]/div/div/div[1]/button/span'  # Updated XPath
 
-    def __init__(self, headless: bool = True):
+    def __init__(self, headless: bool = False):
         self.logger = self._setup_logger()
         self.options = self._setup_chrome_options(headless)
         self.service = ChromeService(
@@ -55,8 +56,8 @@ class simitScraper:
     @staticmethod
     def _setup_chrome_options(headless: bool) -> webdriver.ChromeOptions:
         options = webdriver.ChromeOptions()
-        # Commented out binary_location for cross-platform compatibility
-        # options.binary_location = "/opt/render/project/.chrome/chrome-linux64/chrome-linux64/chrome"
+        # Point to the Chrome installed in render-build.sh
+        options.binary_location = "/opt/render/project/.chrome/chrome-linux64/chrome-linux64/chrome"
         if headless:
             options.add_argument('--headless=new')
         options.add_argument('--window-size=1920,1080')
@@ -81,7 +82,7 @@ class simitScraper:
         driver = None
         try:
             driver = webdriver.Chrome(service=self.service, options=self.options)
-            driver.set_page_load_timeout(60)
+            driver.maximize_window()
             self.logger.info("Chrome browser started successfully")
             yield driver
         except WebDriverException as e:
