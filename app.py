@@ -4,6 +4,10 @@ import json
 
 app = Flask(__name__)
 
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({"message": "Welcome to the scraper API"}), 200
+
 @app.route('/scrape', methods=['POST'])
 def scrape():
     data = request.json
