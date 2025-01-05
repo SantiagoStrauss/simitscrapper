@@ -1,104 +1,76 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import (
+    WebDriverException,
+    NoSuchElementException,
+    ElementClickInterceptedException,
+    TimeoutException,
+    ElementNotInteractableException,
+)
+from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 import logging
-from typing import Optional, Dict
+from typing import Optional
 from dataclasses import dataclass
 from contextlib import contextmanager
 import time
-import gc
 
-@dataclass(slots=True)  # Using slots for memory efficiency
+@dataclass
 class RegistraduriaData:
     nuip: str
+    fecha_consulta: Optional[str] = None
+    documento: Optional[str] = None
     estado: Optional[str] = None
 
-class SimitScraper:
-    # Store XPaths as class-level constants to avoid repeated string creation
-    XPATHS: Dict[str, str] = {
-        'input': '//*[@id="txtBusqueda"]',
-        'button': '//*[@id="consultar"]',
-        'banner': '//*[@id="modalInformation"]/div/div/div[1]/button/span',
-        'results': '//*[@id="mainView"]/div/div[1]/div/div[2]/div[2]/p[1]',
-        'alt_results': '//*[@id="resumenEstadoCuenta"]/div/div'
-    }
-    
-    def __init__(self, headless: bool = True):  # Default to headless for lower memory usage
-        self.logger = self._get_logger()
-        self.options = self._get_chrome_options(headless)
-        self.service = Service(ChromeDriverManager(driver_version="131.0.6778.108").install())
-        
+class simitScraper:
+    URL = 'https://www.fcm.org.co/simit/#/home-public'
+    INPUT_XPATH = '//*[@id="txtBusqueda"]'
+    BUTTON_XPATH = '//*[@id="consultar"]'
+    BANNER_CLOSE_XPATH = '//*[@id="modalInformation"]/div/div/div[1]/button/span'
+
+    def __init__(self, headless: bool = False):
+        self.logger = self._setup_logger()
+        self.options = self._setup_chrome_options(headless)
+        self.service = ChromeService(
+            ChromeDriverManager(driver_version="131.0.6778.108").install()
+        )
+
     @staticmethod
-    def _get_logger() -> logging.Logger:
-        logger = logging.getLogger('simit_scraper')
+    def _setup_logger() -> logging.Logger:
+        logger = logging.getLogger('registraduria_scraper')
         if not logger.handlers:
+            logger.setLevel(logging.INFO)
             handler = logging.StreamHandler()
-            handler.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
+            handler.setFormatter(
+                logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+            )
             logger.addHandler(handler)
-            logger.setLevel(logging.WARNING)  # Reduce logging overhead
         return logger
 
     @staticmethod
-    def _get_chrome_options(headless: bool) -> webdriver.ChromeOptions:
+    def _setup_chrome_options(headless: bool) -> webdriver.ChromeOptions:
         options = webdriver.ChromeOptions()
         options.binary_location = "/opt/render/project/.chrome/chrome-linux64/chrome-linux64/chrome"
         if headless:
             options.add_argument('--headless=new')
-        
-        # Memory optimization arguments
         options.add_argument('--disable-gpu')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-extensions')
-        options.add_argument('--disable-software-rasterizer')
+        options.add_argument('--disable-blink-features=AutomationControlled')
+        options.add_argument('--disable-webgl')
+        options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
+        options.add_experimental_option('useAutomationExtension', False)
         options.add_argument('--disable-logging')
-        options.add_argument('--disable-javascript')
-        options.add_argument('--disable-images')
-        options.add_argument('--disable-canvas-aa')
-        options.add_argument('--disable-2d-canvas-clip-aa')
-        options.add_argument('--disable-gl-drawing-for-tests')
-        options.add_argument('--disable-dev-shm-usage')
-        options.add_argument('--no-zygote')
-        options.add_argument('--single-process')
-        options.add_argument('--disable-pinch')
-        options.add_argument('--window-size=1280,720')  # Fixed window size
-        options.add_argument('--disable-features=NetworkService')
-        options.add_argument('--disable-features=VizDisplayCompositor')
-        
-        # Disable unnecessary features
-        prefs = {
-            'profile.default_content_setting_values': {
-                'images': 2,
-                'plugins': 2,
-                'popups': 2,
-                'geolocation': 2,
-                'notifications': 2,
-                'auto_select_certificate': 2,
-                'fullscreen': 2,
-                'mouselock': 2,
-                'mixed_script': 2,
-                'media_stream': 2,
-                'media_stream_mic': 2,
-                'media_stream_camera': 2,
-                'protocol_handlers': 2,
-                'ppapi_broker': 2,
-                'automatic_downloads': 2,
-                'midi_sysex': 2,
-                'push_messaging': 2,
-                'ssl_cert_decisions': 2,
-                'metro_switch_to_desktop': 2,
-                'protected_media_identifier': 2,
-                'app_banner': 2,
-                'site_engagement': 2,
-                'durable_storage': 2
-            }
-        }
-        options.add_experimental_option('prefs', prefs)
+        options.add_argument(
+            'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+            'AppleWebKit/537.36 (KHTML, like Gecko) '
+            'Chrome/98.0.4758.102 Safari/537.36'
+        )
         return options
 
     @contextmanager
@@ -106,58 +78,131 @@ class SimitScraper:
         driver = None
         try:
             driver = webdriver.Chrome(service=self.service, options=self.options)
+            self.logger.info("Chrome browser started successfully")
             yield driver
+        except WebDriverException as e:
+            self.logger.error(f"Failed to start Chrome driver: {e}")
+            raise
         finally:
             if driver:
                 driver.quit()
-                gc.collect()  # Force garbage collection
+                self.logger.info("Browser closed")
 
-    def _safe_click(self, element, driver) -> bool:
-        try:
-            element.click()
-            return True
-        except Exception:
+    def _retry_click(self, element, driver, description, retries=2, delay=1):
+        for attempt in range(retries):
             try:
-                driver.execute_script("arguments[0].click();", element)
+                element.click()
+                self.logger.info(f"{description} clickeado.")
                 return True
-            except Exception:
+            except ElementClickInterceptedException:
+                self.logger.warning(f"{description} intento {attempt + 1} fallido. Reintentando en {delay} segundos...")
+                time.sleep(delay)
+                driver.execute_script("arguments[0].scrollIntoView(true);", element)
+            except Exception as e:
+                self.logger.error(f"Error al clicar {description}: {e}")
                 return False
+        try:
+            driver.execute_script("arguments[0].click();", element)
+            self.logger.info(f"{description} clickeado via JavaScript.")
+            return True
+        except Exception as e:
+            self.logger.error(f"No se pudo clicar {description} incluso vía JavaScript: {e}")
+            return False
 
     def scrape(self, nuip: str) -> Optional[RegistraduriaData]:
         try:
             with self._get_driver() as driver:
-                driver.get('https://www.fcm.org.co/simit/#/home-public')
+                driver.get(self.URL)
+                self.logger.info(f"Navegando a {self.URL}")
+
                 wait = WebDriverWait(driver, 10)
 
-                # Handle banner
+                # Close banner if present
                 try:
-                    banner = wait.until(EC.element_to_be_clickable((By.XPATH, self.XPATHS['banner'])))
-                    ActionChains(driver).move_to_element(banner).click().perform()
-                except Exception:
-                    pass  # Ignore banner errors
+                    banner_close = wait.until(EC.element_to_be_clickable((By.XPATH, self.BANNER_CLOSE_XPATH)))
+                    actions = ActionChains(driver)
+                    actions.move_to_element(banner_close).perform()
+                    if not self._retry_click(banner_close, driver, "Banner close button"):
+                        self.logger.error("No se pudo cerrar el banner después de varios intentos.")
+                        return None
+                    wait.until(EC.invisibility_of_element_located((By.XPATH, self.BANNER_CLOSE_XPATH)))
+                except TimeoutException:
+                    self.logger.info("No se encontró el banner o ya está cerrado.")
+                except Exception as e:
+                    self.logger.error(f"Error al cerrar el banner: {e}")
 
-                # Input NUIP
-                input_field = wait.until(EC.element_to_be_clickable((By.XPATH, self.XPATHS['input'])))
-                input_field.send_keys(nuip)
-                
-                # Click search
-                search_button = wait.until(EC.element_to_be_clickable((By.XPATH, self.XPATHS['button'])))
-                if not self._safe_click(search_button, driver):
+                try:
+                    input_field = wait.until(
+                        EC.visibility_of_element_located((By.XPATH, self.INPUT_XPATH))
+                    )
+                    wait.until(EC.element_to_be_clickable((By.XPATH, self.INPUT_XPATH)))
+                    input_field.clear()
+                    input_field.send_keys(nuip)
+                    self.logger.info(f"NUIP ingresado: {nuip}")
+
+                    search_button = wait.until(
+                        EC.element_to_be_clickable((By.XPATH, self.BUTTON_XPATH))
+                    )
+                    if not self._retry_click(search_button, driver, "Search button"):
+                        self.logger.error("No se pudo clicar el botón de búsqueda después de varios intentos.")
+                        return None
+                except TimeoutException:
+                    self.logger.error("Campo NUIP no encontrado dentro del tiempo de espera.")
+                    return None
+                except ElementNotInteractableException as e:
+                    self.logger.error(f"Elemento no interactuable: {e}")
+                    return None
+                except Exception as e:
+                    self.logger.error(f"Error al ingresar NUIP o clicar el botón: {e}")
                     return None
 
-                # Get results
                 try:
-                    result = wait.until(EC.visibility_of_element_located(
-                        (By.XPATH, self.XPATHS['results']))).text
-                except Exception:
+                    resultados_xpath = '//*[@id="mainView"]/div/div[1]/div/div[2]/div[2]/p[1]'
+                    resultado_element = wait.until(
+                        EC.visibility_of_element_located((By.XPATH, resultados_xpath))
+                    )
+                    self.logger.info("Resultados encontrados.")
+
+                    estado_text = resultado_element.text if resultado_element else None
+                    if not estado_text or not estado_text.strip():
+                        self.logger.warning("Sin texto en p[1], intentando con resumenEstadoCuenta.")
+                        alt_xpath = '//*[@id="resumenEstadoCuenta"]/div/div'
+                        alt_element = wait.until(
+                            EC.visibility_of_element_located((By.XPATH, alt_xpath))
+                        )
+                        estado_text = alt_element.text if alt_element else None
+
+                    self.logger.info(f"Información extraída: {estado_text}")
+
+                    data = RegistraduriaData(
+                        nuip=nuip,
+                        estado=estado_text
+                    )
+                    self.logger.info(f"Datos extraídos: {data}")
+                    return data
+
+                except TimeoutException:
+                    self.logger.warning("Resultados en p[1] no encontrados, intentando con resumenEstadoCuenta.")
                     try:
-                        result = wait.until(EC.visibility_of_element_located(
-                            (By.XPATH, self.XPATHS['alt_results']))).text
-                    except Exception:
+                        alt_xpath = '//*[@id="resumenEstadoCuenta"]/div/div'
+                        alt_element = wait.until(
+                            EC.visibility_of_element_located((By.XPATH, alt_xpath))
+                        )
+                        estado_text = alt_element.text if alt_element else None
+                        self.logger.info(f"Información extraída: {estado_text}")
+
+                        data = RegistraduriaData(
+                            nuip=nuip,
+                            estado=estado_text
+                        )
+                        self.logger.info(f"Datos extraídos: {data}")
+                        return data
+                    except TimeoutException:
+                        self.logger.error("No se encontró información en resumenEstadoCuenta.")
                         return None
-
-                return RegistraduriaData(nuip=nuip, estado=result)
-
+                    except Exception as e:
+                        self.logger.error(f"Error al extraer información desde resumenEstadoCuenta: {e}")
+                        return None
         except Exception as e:
-            self.logger.error(f"Scraping error: {str(e)}")
+            self.logger.error(f"Error general en el proceso de scraping: {e}")
             return None
