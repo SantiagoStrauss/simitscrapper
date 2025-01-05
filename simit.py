@@ -88,7 +88,7 @@ class simitScraper:
                 driver.quit()
                 self.logger.info("Browser closed")
 
-    def _retry_click(self, element, driver, description, retries=2, delay=1):
+    def _retry_click(self, element, driver, description, retries=1, delay=0.5):
         for attempt in range(retries):
             try:
                 element.click()
@@ -115,7 +115,7 @@ class simitScraper:
                 driver.get(self.URL)
                 self.logger.info(f"Navegando a {self.URL}")
 
-                wait = WebDriverWait(driver, 10)
+                wait = WebDriverWait(driver, 5)
 
                 # Close banner if present
                 try:
