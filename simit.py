@@ -51,26 +51,34 @@ class simitScraper:
         options = webdriver.ChromeOptions()
         options.binary_location = CHROME_BINARY_PATH
         
-        # Basic essential flags
-        if headless:
-            options.add_argument('--headless=new')
+        # Memory optimization flags
+        options.add_argument('--headless=new')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
-        
-        # Renderer optimization flags
         options.add_argument('--disable-gpu')
         options.add_argument('--disable-software-rasterizer')
-        options.add_argument('--disable-webgl')
         options.add_argument('--window-size=800,600')
         
-        # Memory management
-        options.add_argument('--js-flags=--max-old-space-size=128')
+        # Aggressive memory management
+        options.add_argument('--js-flags=--max-old-space-size=64')  # Reduce JS memory
         options.add_argument('--single-process')
         options.add_argument('--disable-site-isolation-trials')
-        
-        # Renderer specific settings
         options.add_argument('--renderer-process-limit=1')
         options.add_argument('--disable-renderer-backgrounding')
+        
+        # Additional memory optimizations
+        options.add_argument('--disable-extensions')
+        options.add_argument('--disable-logging')
+        options.add_argument('--disable-in-process-stack-traces')
+        options.add_argument('--disable-crash-reporter')
+        options.add_argument('--disable-notifications')
+        options.add_argument('--disable-background-networking')
+        options.add_argument('--disable-component-extensions-with-background-pages')
+        
+        # Set low shared memory usage
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-application-cache')
+        options.add_argument('--disable-client-side-phishing-detection')
         
         return options
 
